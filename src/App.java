@@ -1,73 +1,132 @@
-import java.util.List;
-import java.util.Scanner;
+import java.io.File;
+import java.util.*;
 
 public class App {
+
+    private static final String ROW_FORMAT = "%-8s %-30s %12.2f MB %7.2f%%\n";
 
     public static void main(String[] args) {
 
         Scanner input = new Scanner(System.in);
-
-        System.out.println("Enter folder path to scan:");
+        System.out.print("Enter folder path: ");
         String path = input.nextLine();
 
-        FileScanner scanner = new FileScanner();
-        List<FileInfo> files = scanner.scan(path);
+        File folder = new File(path);
 
-        FileCategorizer categorizer = new FileCategorizer();
-        categorizer.categorize(files);
+        if (!folder.exists() || !folder.isDirectory()) {
+            System.out.println("Invalid folder path.");
+            return;
+        }
 
-        long imagesSize = 0;
-        long documentsSize = 0;
-        long videosSize = 0;
+        File[] items = folder.listFiles();
 
-        int imagesCount = 0;
-        int documentsCount = 0;
-        int videosCount = 0;
+        if (items == null) {
+            System.out.println("Folder is empty.");
+            return;
+        }
 
-        System.out.println("\nOTHER FILES:");
+        List<File> directories = new ArrayList<>();
+        List<File> files = new ArrayList<>();
 
-        for (FileInfo file : files) {
-
-            if (file.getCategory().equals("IMAGES")) {
-                imagesCount++;
-                imagesSize += file.getSize();
-            }
-
-            else if (file.getCategory().equals("DOCUMENTS")) {
-                documentsCount++;
-                documentsSize += file.getSize();
-            }
-
-            else if (file.getCategory().equals("VIDEOS")) {
-                videosCount++;
-                videosSize += file.getSize();
-            }
+        for (File f : items) {
+            if (f.isDirectory()) {
+                directories.add(f);
+            } 
             
             else {
-                System.out.println(file.getPath());
+                files.add(f);
             }
         }
 
-        double imagesMB = imagesSize / (1024.0 * 1024.0);
-        double documentsMB = documentsSize / (1024.0 * 1024.0);
-        double videosMB = videosSize / (1024.0 * 1024.0);
+        directories.sort(Comparator.comparing(File::getName));
+        files.sort(Comparator.comparing(File::getName));
 
-        System.out.println("\nFILES SUMMARY:\n");
+        long totalFolderSize = getFolderSize(folder);
 
-        System.out.println("Images:");
-        System.out.println("Number of files: " + imagesCount);
-        System.out.println("Total size: " + String.format("%.2f", imagesMB) + " MB\n");
+        System.out.println("\n========================= FOLDER VIEW ========================\n");
 
-        System.out.println("Documents:");
-        System.out.println("Number of files: " + documentsCount);
-        System.out.println("Total size: " + String.format("%.2f", documentsMB) + " MB\n");
+        System.out.printf("%-8s %-30s %12s %7s\n", "TYPE", "NAME", "SIZE", "%");
+        System.out.println("-----------------------------------------------------------------");
 
-        System.out.println("Videos:");
-        System.out.println("Number of files: " + videosCount);
-        System.out.println("Total size: " + String.format("%.2f", videosMB) + " MB\n");
+        //directories
+        for (File dir : directories) {
+            long size = getFolderSize(dir);
+            double percent = totalFolderSize == 0 ? 0 : (size * 100.0 / totalFolderSize);
+            System.out.printf(ROW_FORMAT, "<DIR>", dir.getName(), toMB(size), percent);
+        }
 
-        System.out.println("Total files scanned: " + files.size());
+        //files
+        for (File file : files) {
+            long size = file.length();
+            double percent = totalFolderSize == 0 ? 0 : (size * 100.0 / totalFolderSize);
+            System.out.printf(ROW_FORMAT, getType(file), file.getName(), toMB(size), percent);
+        }
 
-        input.close();
+        System.out.println("-----------------------------------------------------------------");
+        System.out.printf("%-8s %-30s %12.2f MB %7s\n\n", "TOTAL", "", toMB(totalFolderSize), "100%");
+
+        //summary
+
+        FileScanner scanner = new FileScanner();
+        List<FileInfo> scannedFiles = scanner.scan(path);
+
+        FileCategorizer categorizer = new FileCategorizer();
+        categorizer.categorize(scannedFiles);
+
+        long imagesSize = 0, documentsSize = 0, videosSize = 0;
+        int imagesCount = 0, documentsCount = 0, videosCount = 0;
+
+        for (FileInfo f : scannedFiles) {
+            switch (f.getCategory()) {
+                case "IMAGES":
+                    imagesSize += f.getSize();
+                    imagesCount++;
+                    break;
+                case "DOCUMENTS":
+                    documentsSize += f.getSize();
+                    documentsCount++;
+                    break;
+                case "VIDEOS":
+                    videosSize += f.getSize();
+                    videosCount++;
+                    break;
+            }
+        }
+
+        System.out.println("\n============= SUMMARY =============");
+
+        System.out.printf("Images:     %5d files    %10.2f MB\n", imagesCount, toMB(imagesSize));
+        System.out.printf("Documents:  %5d files    %10.2f MB\n", documentsCount, toMB(documentsSize));
+        System.out.printf("Videos:     %5d files    %10.2f MB\n", videosCount, toMB(videosSize));
+    }
+
+    //bytes to mb
+    private static double toMB(long bytes) {
+        return bytes / (1024.0 * 1024.0);
+    }
+
+    //file type
+    private static String getType(File file) {
+        String name = file.getName();
+        int dot = name.lastIndexOf(".");
+        if (dot == -1) return "FILE";
+        return name.substring(dot + 1).toUpperCase();
+    }
+
+    //recursive folder size
+    private static long getFolderSize(File dir) {
+        long size = 0;
+        File[] files = dir.listFiles();
+        if (files == null) return 0;
+        for (File f : files) {
+            if (f.isFile()) {
+                size += f.length();
+            } 
+            
+            else {
+                size += getFolderSize(f);
+            }
+        }
+        return size;
     }
 }
