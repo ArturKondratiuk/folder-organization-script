@@ -33,17 +33,16 @@ public class App {
             //help
             if (command.equalsIgnoreCase("help")) {
                 System.out.println("Available commands:");
-                System.out.println("ls               - show folder content");
-                System.out.println("cd <folder>      - go to subfolder");
-                System.out.println("cd .             - go to parent folder");
-                System.out.println("goto <path>      - go to absolute path");
-                System.out.println("summary          - show files summary");
-                System.out.println("delete <name>     - delete file or folder");
-                System.out.println("type <file>       - show file content");
-                System.out.println("rename <old> <new>- rename file or folder");
-                System.out.println("mkdir <name>      - create new directory");
-                System.out.println("organize          - sort files by category");
-                System.out.println("exit             - close program");
+                System.out.println("ls                 - show folder content");
+                System.out.println("cd <folder>        - go to subfolder");
+                System.out.println("cd .               - go to parent folder");
+                System.out.println("goto <path>        - go to absolute path");
+                System.out.println("summary            - show files summary");
+                System.out.println("delete <name>      - delete file or folder");
+                System.out.println("rename <old> <new> - rename file or folder (use .doctype)");
+                System.out.println("mkdir <name>       - create new directory");
+                System.out.println("organize           - sort files by category");
+                System.out.println("exit               - close program");
                 continue;
             }
 
@@ -63,12 +62,16 @@ public class App {
                     if (parent != null) {
                         currentFolder = parent;
                     }
-                } else {
+                } 
+                
+                else {
                     File target = new File(currentFolder, folderName);
 
                     if (target.exists() && target.isDirectory()) {
                         currentFolder = target;
-                    } else {
+                    } 
+                    
+                    else {
                         System.out.println("Folder not found.");
                     }
                 }
@@ -86,7 +89,9 @@ public class App {
                 if (target.exists() && target.isDirectory()) {
                     currentFolder = target;
                     printFolderView(currentFolder); //refresh after goto
-                } else {
+                } 
+                
+                else {
                     System.out.println("Invalid path.");
                 }
 
@@ -107,29 +112,7 @@ public class App {
                 deleteRecursive(target); //delete folder with content
                 printFolderView(currentFolder);
                 continue;
-            }
-
-            //type
-            if (command.startsWith("type ")) {
-
-                String name = command.substring(5);
-                File target = new File(currentFolder, name);
-
-                if (!target.exists() || target.isDirectory()) {
-                    System.out.println("File not found.");
-                    continue;
-                }
-
-                try (Scanner reader = new Scanner(target)) {
-                    while (reader.hasNextLine()) {
-                        System.out.println(reader.nextLine());
-                    }
-                } catch (Exception e) {
-                    System.out.println("Cannot read file.");
-                }
-
-                continue;
-            }
+            }   
 
             //rename
             if (command.startsWith("rename ")) {
