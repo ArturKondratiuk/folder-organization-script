@@ -11,6 +11,7 @@ if %errorlevel% neq 0 (
 )
 
 echo Running program...
+echo(
 java App
 
 pause

@@ -1,9 +1,8 @@
-
 import java.io.File;
 import java.util.*;
 
 public class App {
-
+    //table row format
     private static final String ROW_FORMAT = "%-8s %-35s %12.2f MB %7.2f%%\n";
 
     public static void main(String[] args) {
@@ -12,23 +11,27 @@ public class App {
 
         Scanner input = new Scanner(System.in);
 
+        //start folder = user home
         File currentFolder = new File(System.getProperty("user.home"));
 
+        //validation
         if (!currentFolder.exists() || !currentFolder.isDirectory()) {
             System.out.println("Invalid folder path.");
             return;
         }
 
+        //main loop like real terminal
         while (true) {
-
+            //prompt
             System.out.print(currentFolder.getAbsolutePath() + " > ");
             String command = input.nextLine();
 
+            //exit program
             if (command.equalsIgnoreCase("exit")) {
                 break;
             }
 
-            //help
+            //help commands
             if (command.equalsIgnoreCase("help")) {
                 System.out.println("Available commands:");
                 System.out.println("ls                 - show folder content/refresh");
@@ -44,64 +47,70 @@ public class App {
                 continue;
             }
 
-            //ls
+            //show folder content or refresh
             if (command.equalsIgnoreCase("ls")) {
-                printFolderView(currentFolder); //reuse method
+                printFolderView(currentFolder); //refresh view
                 continue;
             }
 
-            //cd
+            //go to parent/subfolder
             if (command.startsWith("cd ")) {
-
                 String folderName = command.substring(3);
 
+                //go to parent
                 if (folderName.equals(".")) {
                     File parent = currentFolder.getParentFile();
-                    if (parent != null) {
+                    if (parent != null) { //validation if there is no parent folder
                         currentFolder = parent;
                     }
-                } else {
-                    File target = new File(currentFolder, folderName);
+                } 
+                
+                //go to subfolder
+                else {
+                    File target = new File(currentFolder, folderName); //folder object
 
                     if (target.exists() && target.isDirectory()) {
-                        currentFolder = target;
-                    } else {
-                        System.out.println("Folder not found.");
+                        currentFolder = target;  //if folder exist goto
+                    } 
+                    
+                    else {
+                        System.out.println("Folder not found."); //if there is no folder
                     }
                 }
 
-                printFolderView(currentFolder); //refresh after cd
+                printFolderView(currentFolder); //auto refresh
                 continue;
             }
 
-            //goto
+            //goto absolute path
             if (command.startsWith("goto ")) {
 
                 String newPath = command.substring(5);
-                File target = new File(newPath);
+                File target = new File(newPath); //input new path in file object
 
                 if (target.exists() && target.isDirectory()) {
                     currentFolder = target;
-                    printFolderView(currentFolder); //refresh after goto
-                } else {
-                    System.out.println("Invalid path.");
+                    printFolderView(currentFolder); //auto refresh
+                } 
+                
+                else {
+                    System.out.println("Invalid path."); //if path is invalid
                 }
-
                 continue;
             }
 
-            //delete
+            //delete file or folder
             if (command.startsWith("delete ")) {
 
                 String name = command.substring(7);
-                File target = new File(currentFolder, name);
+                File target = new File(currentFolder, name); //input name of file in file object
 
                 if (!target.exists()) {
-                    System.out.println("File not found.");
+                    System.out.println("File not found."); //if not found
                     continue;
                 }
 
-                //check folder with content
+                //folder with content confirmation
                 if (target.isDirectory()) {
 
                     File[] content = target.listFiles();
@@ -117,17 +126,16 @@ public class App {
                         }
                     }
                 }
-
-                deleteRecursive(target); //delete file or folder
-                printFolderView(currentFolder);
+                deleteRecursive(target); //recursive delete
+                printFolderView(currentFolder); //refresh
                 continue;
             }
 
             //rename
             if (command.startsWith("rename ")) {
-
                 String[] parts = command.split(" ");
 
+                //validation
                 if (parts.length < 3) {
                     System.out.println("Usage: rename <old> <new>");
                     continue;
@@ -137,29 +145,26 @@ public class App {
                 File newFile = new File(currentFolder, parts[2]);
 
                 if (oldFile.exists()) {
-                    oldFile.renameTo(newFile);
+                    oldFile.renameTo(newFile); //rename
                 } 
                 
                 else {
-                    System.out.println("File not found.\n");
+                    System.out.println("File not found.\n"); //if file wasn't found
                 }
-
-                printFolderView(currentFolder);
+                printFolderView(currentFolder); //refresh
                 continue;
             }
 
-            //mkdir
+            //create directory
             if (command.startsWith("mkdir ")) {
-
                 String name = command.substring(6);
-                File newDir = new File(currentFolder, name);
-                newDir.mkdir();
-
+                File newDir = new File(currentFolder, name); //input directory name
+                newDir.mkdir(); //create only one level
                 printFolderView(currentFolder);
                 continue;
             }
 
-            //organize
+            //organize files by category (by mister gpt)
             if (command.equalsIgnoreCase("organize")) {
 
                 FileScanner scanner = new FileScanner();
@@ -169,7 +174,6 @@ public class App {
                 categorizer.categorize(scannedFiles);
 
                 for (FileInfo f : scannedFiles) {
-
                     File source = f.getPath().toFile();
 
                     //skip folders
@@ -177,14 +181,15 @@ public class App {
                         continue;
                     }
 
-                    //skip files from subfolders
+                    //only files from current folder
                     if (!source.getParentFile().equals(currentFolder)) {
                         continue;
                     }
 
                     String category = f.getCategory();
-
                     File categoryDir = new File(currentFolder, category);
+
+                    //create category folder if not exists (by calling mkdir method)
                     if (!categoryDir.exists()) {
                         categoryDir.mkdir();
                     }
@@ -193,12 +198,11 @@ public class App {
 
                     source.renameTo(dest); //move file
                 }
-
                 printFolderView(currentFolder);
                 continue;
             }
 
-            //summary
+            //summary by categories
             if (command.equalsIgnoreCase("summary")) {
 
                 FileScanner scanner = new FileScanner();
@@ -229,22 +233,21 @@ public class App {
                     }
                 }
 
+                //summary output
                 System.out.println("\n============= SUMMARY =============");
-
                 System.out.printf("Images:     %5d files    %10.2f MB\n", imagesCount, toMB(imagesSize));
                 System.out.printf("Documents:  %5d files    %10.2f MB\n", documentsCount, toMB(documentsSize));
                 System.out.printf("Videos:     %5d files    %10.2f MB\n\n", videosCount, toMB(videosSize));
-
                 continue;
             }
 
+            //unknown command
             System.out.println("Unknown command. Type help");
         }
     }
 
     //delete folder recursively
     private static void deleteRecursive(File file) {
-
         if (file.isDirectory()) {
             File[] files = file.listFiles();
             if (files != null) {
@@ -253,15 +256,14 @@ public class App {
                 }
             }
         }
-
-        file.delete();
+        file.delete(); //delete file or empty folder
     }
 
-    //print folder content
+    //print folder content in table view
     private static void printFolderView(File folder) {
-
         File[] items = folder.listFiles();
 
+        //empty or access denied
         if (items == null) {
             System.out.println("Folder is empty.");
             return;
@@ -270,21 +272,25 @@ public class App {
         List<File> directories = new ArrayList<>();
         List<File> files = new ArrayList<>();
 
+        //split dirs and files
         for (File f : items) {
             if (f.isDirectory()) {
                 directories.add(f);
-            } else {
+            } 
+            
+            else {
                 files.add(f);
             }
         }
 
+        //sort by name
         directories.sort(Comparator.comparing(File::getName));
         files.sort(Comparator.comparing(File::getName));
 
-        long totalFolderSize = getFolderSize(folder);
+        long totalFolderSize = getFolderSize(folder); //total size
 
+        //folder view output
         System.out.println("\n============================= FOLDER VIEW ===========================\n");
-
         System.out.printf("%-8s %-35s %12s %7s\n", "TYPE", "NAME", "SIZE", "%");
         System.out.println("---------------------------------------------------------------------");
 
@@ -311,6 +317,8 @@ public class App {
         }
 
         System.out.println("---------------------------------------------------------------------");
+
+        //total row
         System.out.printf(ROW_FORMAT, "TOTAL", "", toMB(totalFolderSize), 100.0);
         System.out.println("");
     }
@@ -320,7 +328,7 @@ public class App {
         return bytes / (1024.0 * 1024.0);
     }
 
-    //file type
+    //get file extension as type
     private static String getType(File file) {
         String name = file.getName();
         int dot = name.lastIndexOf(".");
@@ -334,9 +342,11 @@ public class App {
     private static long getFolderSize(File dir) {
         long size = 0;
         File[] files = dir.listFiles();
-        if (files == null) {
+
+        if (files == null) { //if no files return none
             return 0;
         }
+
         for (File f : files) {
             if (f.isFile()) {
                 size += f.length();
@@ -346,10 +356,11 @@ public class App {
                 size += getFolderSize(f);
             }
         }
+
         return size;
     }
 
-    //trim long names
+    //trim long file names for table view (mister gpt idea)
     private static String fitName(String name, int max) {
         if (name.length() <= max) {
             return name;

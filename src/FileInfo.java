@@ -6,7 +6,7 @@ public class FileInfo {
     private String extension;
     private String category;
 
-    public FileInfo(Path path, long size, String extension) {
+    public FileInfo(Path path, long size, String extension) { //file info constcructor
         this.path = path;
         this.size = size;
         this.extension = extension.toLowerCase();
