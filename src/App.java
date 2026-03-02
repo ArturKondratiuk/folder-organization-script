@@ -8,22 +8,20 @@ public class App {
 
     public static void main(String[] args) {
 
-        Scanner input = new Scanner(System.in);
-        System.out.print("Enter folder path: ");
-        String path = input.nextLine();
+        System.out.println("Type help to see available commands\n");
 
-        File currentFolder = new File(path);
+        Scanner input = new Scanner(System.in);
+
+        File currentFolder = new File(System.getProperty("user.home"));
 
         if (!currentFolder.exists() || !currentFolder.isDirectory()) {
             System.out.println("Invalid folder path.");
             return;
         }
 
-        printFolderView(currentFolder); //first scan
-
         while (true) {
 
-            System.out.print("\n" + currentFolder.getAbsolutePath() + " > ");
+            System.out.print(currentFolder.getAbsolutePath() + " > ");
             String command = input.nextLine();
 
             if (command.equalsIgnoreCase("exit")) {
@@ -33,7 +31,7 @@ public class App {
             //help
             if (command.equalsIgnoreCase("help")) {
                 System.out.println("Available commands:");
-                System.out.println("ls                 - show folder content");
+                System.out.println("ls                 - show folder content/refresh");
                 System.out.println("cd <folder>        - go to subfolder");
                 System.out.println("cd .               - go to parent folder");
                 System.out.println("goto <path>        - go to absolute path");
@@ -42,7 +40,7 @@ public class App {
                 System.out.println("rename <old> <new> - rename file or folder (use .filetype)");
                 System.out.println("mkdir <name>       - create new directory");
                 System.out.println("organize           - sort files by category");
-                System.out.println("exit               - close program");
+                System.out.println("exit               - close program\n");
                 continue;
             }
 
@@ -103,7 +101,24 @@ public class App {
                     continue;
                 }
 
-                deleteRecursive(target); //delete folder with content
+                //check folder with content
+                if (target.isDirectory()) {
+
+                    File[] content = target.listFiles();
+
+                    if (content != null && content.length > 0) {
+
+                        System.out.print("Folder is not empty.\nDelete folder \"" + name + "\" with " + content.length + " items? (y/n): ");
+                        String confirm = input.nextLine();
+
+                        if (!confirm.equalsIgnoreCase("y")) {
+                            System.out.println("Delete cancelled.\n");
+                            continue;
+                        }
+                    }
+                }
+
+                deleteRecursive(target); //delete file or folder
                 printFolderView(currentFolder);
                 continue;
             }
@@ -123,8 +138,10 @@ public class App {
 
                 if (oldFile.exists()) {
                     oldFile.renameTo(newFile);
-                } else {
-                    System.out.println("File not found.");
+                } 
+                
+                else {
+                    System.out.println("File not found.\n");
                 }
 
                 printFolderView(currentFolder);
@@ -216,7 +233,7 @@ public class App {
 
                 System.out.printf("Images:     %5d files    %10.2f MB\n", imagesCount, toMB(imagesSize));
                 System.out.printf("Documents:  %5d files    %10.2f MB\n", documentsCount, toMB(documentsSize));
-                System.out.printf("Videos:     %5d files    %10.2f MB\n", videosCount, toMB(videosSize));
+                System.out.printf("Videos:     %5d files    %10.2f MB\n\n", videosCount, toMB(videosSize));
 
                 continue;
             }
@@ -256,9 +273,7 @@ public class App {
         for (File f : items) {
             if (f.isDirectory()) {
                 directories.add(f);
-            } 
-            
-            else {
+            } else {
                 files.add(f);
             }
         }
@@ -297,6 +312,7 @@ public class App {
 
         System.out.println("---------------------------------------------------------------------");
         System.out.printf(ROW_FORMAT, "TOTAL", "", toMB(totalFolderSize), 100.0);
+        System.out.println("");
     }
 
     //bytes to mb
@@ -324,7 +340,9 @@ public class App {
         for (File f : files) {
             if (f.isFile()) {
                 size += f.length();
-            } else {
+            } 
+            
+            else {
                 size += getFolderSize(f);
             }
         }
