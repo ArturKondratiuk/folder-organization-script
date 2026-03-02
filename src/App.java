@@ -4,7 +4,7 @@ import java.util.*;
 
 public class App {
 
-    private static final String ROW_FORMAT = "%-8s %-30s %12.2f MB %7.2f%%\n";
+    private static final String ROW_FORMAT = "%-8s %-35s %12.2f MB %7.2f%%\n";
 
     public static void main(String[] args) {
 
@@ -39,7 +39,7 @@ public class App {
                 System.out.println("goto <path>        - go to absolute path");
                 System.out.println("summary            - show files summary");
                 System.out.println("delete <name>      - delete file or folder");
-                System.out.println("rename <old> <new> - rename file or folder (use .doctype)");
+                System.out.println("rename <old> <new> - rename file or folder (use .filetype)");
                 System.out.println("mkdir <name>       - create new directory");
                 System.out.println("organize           - sort files by category");
                 System.out.println("exit               - close program");
@@ -62,16 +62,12 @@ public class App {
                     if (parent != null) {
                         currentFolder = parent;
                     }
-                } 
-                
-                else {
+                } else {
                     File target = new File(currentFolder, folderName);
 
                     if (target.exists() && target.isDirectory()) {
                         currentFolder = target;
-                    } 
-                    
-                    else {
+                    } else {
                         System.out.println("Folder not found.");
                     }
                 }
@@ -89,9 +85,7 @@ public class App {
                 if (target.exists() && target.isDirectory()) {
                     currentFolder = target;
                     printFolderView(currentFolder); //refresh after goto
-                } 
-                
-                else {
+                } else {
                     System.out.println("Invalid path.");
                 }
 
@@ -112,7 +106,7 @@ public class App {
                 deleteRecursive(target); //delete folder with content
                 printFolderView(currentFolder);
                 continue;
-            }   
+            }
 
             //rename
             if (command.startsWith("rename ")) {
@@ -262,7 +256,9 @@ public class App {
         for (File f : items) {
             if (f.isDirectory()) {
                 directories.add(f);
-            } else {
+            } 
+            
+            else {
                 files.add(f);
             }
         }
@@ -272,27 +268,35 @@ public class App {
 
         long totalFolderSize = getFolderSize(folder);
 
-        System.out.println("\n========================= FOLDER VIEW ========================\n");
+        System.out.println("\n============================= FOLDER VIEW ===========================\n");
 
-        System.out.printf("%-8s %-30s %12s %7s\n", "TYPE", "NAME", "SIZE", "%");
-        System.out.println("-----------------------------------------------------------------");
+        System.out.printf("%-8s %-35s %12s %7s\n", "TYPE", "NAME", "SIZE", "%");
+        System.out.println("---------------------------------------------------------------------");
 
         //directories
         for (File dir : directories) {
             long size = getFolderSize(dir);
             double percent = totalFolderSize == 0 ? 0 : (size * 100.0 / totalFolderSize);
-            System.out.printf(ROW_FORMAT, "<DIR>", dir.getName(), toMB(size), percent);
+            System.out.printf(ROW_FORMAT,
+                    "<DIR>",
+                    fitName(dir.getName(), 35),
+                    toMB(size),
+                    percent);
         }
 
         //files
         for (File file : files) {
             long size = file.length();
             double percent = totalFolderSize == 0 ? 0 : (size * 100.0 / totalFolderSize);
-            System.out.printf(ROW_FORMAT, getType(file), file.getName(), toMB(size), percent);
+            System.out.printf(ROW_FORMAT,
+                    getType(file),
+                    fitName(file.getName(), 35),
+                    toMB(size),
+                    percent);
         }
 
-        System.out.println("-----------------------------------------------------------------");
-        System.out.printf("%-8s %-30s %12.2f MB %7s\n\n", "TOTAL", "", toMB(totalFolderSize), "100%");
+        System.out.println("---------------------------------------------------------------------");
+        System.out.printf(ROW_FORMAT, "TOTAL", "", toMB(totalFolderSize), 100.0);
     }
 
     //bytes to mb
@@ -325,5 +329,13 @@ public class App {
             }
         }
         return size;
+    }
+
+    //trim long names
+    private static String fitName(String name, int max) {
+        if (name.length() <= max) {
+            return name;
+        }
+        return name.substring(0, max - 3) + "...";
     }
 }
